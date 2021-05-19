@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>indexa-http</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            box-sizing: inherit;
+            font-family: monospace;
+            font-size: 14px;
+            color: #272822;
+        }
+
+        html,
+        body,
+        p {
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            box-sizing: border-box;
+            min-width: 300px;
+        }
+
+        body {
+            background-color: #f9fafa;
+        }
+
+        em {
+            font-style: normal;
+            color: #fff;
+            background-color: #3499ec;
+        }
+
+        .container {
+            padding: 3.25em;
+        }
+
+        input[type="search"] {
+            height: 2.5em;
+            padding: 20px;
+            border: 1px solid transparent;
+            background-color: #fff;
+            border-color: #dbdbdb;
+            outline: none;
+        }
+
+        input[type="search"]:hover {
+            border-color: #b4b4b4;
+        }
+
+        input[type="search"]:focus {
+            border-color: #272822;
+        }
+
+        #query {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .table-row {
+            display: flex;
+            flex-wrap: wrap;
+            line-height: 1.375;
+        }
+
+        .table-row.table-body:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .table-row.table-head {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+            margin-bottom: 0.5em;
+            padding-bottom: 0.5em;
+        }
+
+        .table-row.table-head .table-column-basename {
+            padding-left: 0;
+        }
+
+        .table-row.table-body {
+            margin-left: -1em;
+            margin-right: -1em;
+        }
+
+        .table-column-basename {
+            width: 20%;
+        }
+
+        .table-column-size {
+            width: 10%;
+            text-align: right;
+        }
+
+        .table-column-modified {
+            width: 15%;
+        }
+
+        .table-column-path {
+            width: 55%;
+        }
+
+        .table-column-basename,
+        .table-column-size,
+        .table-column-modified,
+        .table-column-path {
+            padding: 0.25em 1em;
+        }
+
+        .table-body div {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+
+</html>
+
+<body>
+    <div class="container">
+        <input id="query" type="search" autofocus placeholder="Type query here" />
+        <div class="table">
+            <div class="table-row table-head">
+                <div class="table-column-basename">Basename▲</div>
+                <div class="table-column-size">Size</div>
+                <div class="table-column-modified">Modified</div>
+                <div class="table-column-path">Path</div>
+            </div>
+            <div id="hits"></div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            function sanitizeHTMLEntities(str) {
+                return str.replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/&lt;em&gt;/g, '<em>')
+                    .replace(/&lt;\/em&gt;/g, '<\/em>');
+            }
+
+            const UNITS = [
+                'B',
+                'KiB',
+                'MiB',
+                'GiB',
+                'TiB',
+                'PiB',
+                'EiB',
+                'ZiB',
+                'YiB'
+            ];
+            function prettySize(size) {
+                if (size === 0) {
+                    return `0 ${UNITS[0]}`;
+                }
+                let exponent = Math.floor(Math.log(size) / Math.log(1024));
+                exponent = Math.min(exponent, UNITS.length - 1);
+                size /= Math.pow(1024, exponent);
+                size = size.toPrecision(3);
+                return `${size} ${UNITS[exponent]}`
+            }
+
+            function pluralize(number) {
+                if (number === 1) {
+                    return `${number} item`;
+                } else {
+                    return `${number} items`;
+                }
+            }
+
+            function pad2(value) {
+                return value.toString().padStart(2, '0');
+            }
+
+            let req;
+
+            function update() {
+                if (req) {
+                    req.abort();
+                }
+
+                req = new XMLHttpRequest();
+                req.open('GET', `search?query=${encodeURIComponent(query.value)}&statuses=basename,size,modified,path`);
+                req.onload = function () {
+                    if (req.readyState !== 4 || req.status !== 200) {
+                        return;
+                    }
+
+                    hits.innerHTML = '';
+
+                    const res = JSON.parse(sanitizeHTMLEntities(req.responseText));
+
+                    for (const hit of res.hits) {
+                        const basenameColumn = document.createElement('div');
+                        basenameColumn.className = 'table-column-basename';
+                        basenameColumn.innerHTML = hit.highlighted.basename;
+
+                        const sizeColumn = document.createElement('div');
+                        sizeColumn.className = 'table-column-size';
+                        sizeColumn.innerText = hit.isDir ? pluralize(hit.size) : prettySize(hit.size);
+
+                        const date = new Date(hit.modified);
+                        const modifiedColumn = document.createElement('div');
+                        modifiedColumn.className = 'table-column-modified';
+                        modifiedColumn.innerText = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+                            + ` ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+
+                        const pathColumn = document.createElement('div');
+                        pathColumn.className = 'table-column-path';
+                        pathColumn.innerHTML = hit.highlighted.path;
+
+                        const row = document.createElement('div');
+                        row.classList.add('table-row', 'table-body');
+                        row.appendChild(basenameColumn);
+                        row.appendChild(sizeColumn);
+                        row.appendChild(modifiedColumn);
+                        row.appendChild(pathColumn);
+
+                        hits.appendChild(row);
+                    }
+                };
+                req.send();
+            }
+
+            query.oninput = update;
+            update();
+        })();
+    </script>
+</body>
+
+</html>

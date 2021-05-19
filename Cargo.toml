@@ -1,0 +1,22 @@
+[package]
+name = "indexa-http"
+version = "0.1.0"
+authors = ["mosm <airman515@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "3.3.2"
+bincode = "1.3.3"
+dirs = "3.0.2"
+env_logger = "0.8.3"
+indexa = { git = "https://github.com/mosmeh/indexa.git", default-features = false }
+num_cpus = "1.13.0"
+rayon = "1.5.1"
+serde = { version = "1.0.126", features = ["derive"] }
+structopt = "0.3.21"
+tokio = { version = "0.2", features = ["blocking"] }
+toml = "0.5.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
