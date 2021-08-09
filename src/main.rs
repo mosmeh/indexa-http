@@ -21,11 +21,11 @@ pub struct Opt {
 
     /// Number of threads to use.
     ///
-    /// Defaults to the number of available CPUs - 1.
+    /// Defaults to the number of available CPUs minus 1.
     #[structopt(short, long)]
     threads: Option<usize>,
 
-    /// Location of the config file.
+    /// Location of a config file.
     #[structopt(short = "C", long)]
     config: Option<PathBuf>,
 }

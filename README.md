@@ -92,5 +92,5 @@ USAGE:
 OPTIONS:
     -a, --addr <addr>          Address to listen on [default: 127.0.0.1:8080]
     -t, --threads <threads>    Number of threads to use
-    -C, --config <config>      Location of the config file
+    -C, --config <config>      Location of a config file
 ```
