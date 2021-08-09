@@ -6,11 +6,7 @@ use indexa::{
     query::{CaseSensitivity, MatchPathMode, QueryBuilder, SortOrder},
 };
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
-use std::{
-    path::PathBuf,
-    sync::{atomic::AtomicBool, Arc},
-    time::SystemTime,
-};
+use std::{path::PathBuf, time::SystemTime};
 
 #[derive(Debug, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -154,9 +150,8 @@ pub async fn service(
     let database_cloned = database.clone();
     let queue_cloned = query.clone();
     let hits = tokio::task::spawn_blocking(move || {
-        let aborted = Arc::new(AtomicBool::new(false));
         database_cloned
-            .search(&queue_cloned, &aborted)
+            .search(&queue_cloned)
             .expect("Failed to search")
     })
     .await
@@ -170,11 +165,10 @@ pub async fn service(
         .take(params.limit)
         .map(|id| {
             let entry = database.entry(id);
-            let match_detail = query.match_detail(&entry).unwrap();
             Hit {
                 is_dir: entry.is_dir(),
                 basename: status_flags[StatusKind::Basename].then(|| entry.basename().to_string()),
-                path: status_flags[StatusKind::FullPath].then(|| entry.path()),
+                path: status_flags[StatusKind::Path].then(|| entry.path()),
                 extension: status_flags[StatusKind::Extension]
                     .then(|| entry.extension().map(str::to_string)),
                 size: status_flags[StatusKind::Size].then(|| entry.size().ok()),
@@ -184,10 +178,13 @@ pub async fn service(
                 accessed: status_flags[StatusKind::Accessed].then(|| entry.accessed().into()),
                 highlighted: Highlighted {
                     basename: status_flags[StatusKind::Basename].then(|| {
-                        highlight_text(entry.basename(), &match_detail.basename_matches())
+                        highlight_text(entry.basename(), &query.basename_matches(&entry).unwrap())
                     }),
-                    path: status_flags[StatusKind::FullPath].then(|| {
-                        highlight_text(entry.path().to_str().unwrap(), &match_detail.path_matches())
+                    path: status_flags[StatusKind::Path].then(|| {
+                        highlight_text(
+                            entry.path().to_str().unwrap(),
+                            &query.path_matches(&entry).unwrap(),
+                        )
                     }),
                 },
             }
