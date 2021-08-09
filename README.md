@@ -4,20 +4,12 @@
 
 HTTP server and web interface for [indexa](https://github.com/mosmeh/indexa)
 
-## Installation
+## Usage
 
 Clone this repository and run:
 
 ```sh
-cargo install --path .
-```
-
-## Usage
-
-Launch the server with:
-
-```sh
-indexa-http
+cargo run --release
 ```
 
 It will locate and load indexa's database and config.
