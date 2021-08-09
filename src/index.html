@@ -138,7 +138,7 @@
                 return str.replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/&lt;em&gt;/g, '<em>')
-                    .replace(/&lt;\/em&gt;/g, '<\/em>');
+                    .replace(/&lt;\/em&gt;/g, '</em>');
             }
 
             const UNITS = [
@@ -150,7 +150,7 @@
                 'PiB',
                 'EiB',
                 'ZiB',
-                'YiB'
+                'YiB',
             ];
             function prettySize(size) {
                 if (size === 0) {
@@ -160,7 +160,7 @@
                 exponent = Math.min(exponent, UNITS.length - 1);
                 size /= Math.pow(1024, exponent);
                 size = size.toPrecision(3);
-                return `${size} ${UNITS[exponent]}`
+                return `${size} ${UNITS[exponent]}`;
             }
 
             function pluralize(number) {
@@ -205,8 +205,8 @@
                         const date = new Date(hit.modified);
                         const modifiedColumn = document.createElement('div');
                         modifiedColumn.className = 'table-column-modified';
-                        modifiedColumn.innerText = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
-                            + ` ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+                        modifiedColumn.innerText = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}` +
+                            ` ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 
                         const pathColumn = document.createElement('div');
                         pathColumn.className = 'table-column-path';
