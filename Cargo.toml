@@ -12,8 +12,8 @@ env_logger = "0.9.0"
 indexa = { git = "https://github.com/mosmeh/indexa.git", default-features = false }
 num_cpus = "1.13.0"
 rayon = "1.5.1"
-serde = { version = "1.0.127", features = ["derive"] }
-structopt = "0.3.22"
+serde = { version = "1.0.130", features = ["derive"] }
+structopt = "0.3.23"
 tokio = { version = "0.2", features = ["blocking"] }
 toml = "0.5.8"
 

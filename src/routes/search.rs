@@ -1,12 +1,13 @@
 use actix_web::{get, web, HttpResponse, Responder};
 use indexa::{
+    camino::Utf8PathBuf,
     database::{Database, StatusKind},
     enum_map::EnumMap,
     mode::Mode,
     query::{CaseSensitivity, MatchPathMode, QueryBuilder, SortOrder},
 };
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
-use std::{path::PathBuf, time::SystemTime};
+use std::time::SystemTime;
 
 #[derive(Debug, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -14,7 +15,6 @@ pub struct SearchParams {
     query: String,
     limit: usize,
     statuses: String,
-    #[serde(with = "MatchPathModeDef")]
     match_path: MatchPathMode,
     #[serde(with = "CaseSensitivityDef")]
     case_sensitivity: CaseSensitivity,
@@ -38,14 +38,6 @@ impl Default for SearchParams {
             sort_dirs_before_files: false,
         }
     }
-}
-
-#[derive(Deserialize)]
-#[serde(remote = "MatchPathMode", rename_all = "camelCase")]
-enum MatchPathModeDef {
-    Always,
-    Never,
-    Auto,
 }
 
 #[derive(Deserialize)]
@@ -73,7 +65,7 @@ struct Hit {
     basename: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    path: Option<PathBuf>,
+    path: Option<Utf8PathBuf>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     extension: Option<Option<String>>,
@@ -177,14 +169,10 @@ pub async fn service(
                 modified: status_flags[StatusKind::Modified].then(|| entry.modified().into()),
                 accessed: status_flags[StatusKind::Accessed].then(|| entry.accessed().into()),
                 highlighted: Highlighted {
-                    basename: status_flags[StatusKind::Basename].then(|| {
-                        highlight_text(entry.basename(), &query.basename_matches(&entry).unwrap())
-                    }),
+                    basename: status_flags[StatusKind::Basename]
+                        .then(|| highlight_text(entry.basename(), &query.basename_matches(&entry))),
                     path: status_flags[StatusKind::Path].then(|| {
-                        highlight_text(
-                            entry.path().to_str().unwrap(),
-                            &query.path_matches(&entry).unwrap(),
-                        )
+                        highlight_text(entry.path().as_str(), &query.path_matches(&entry))
                     }),
                 },
             }

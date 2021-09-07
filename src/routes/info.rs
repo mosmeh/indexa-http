@@ -1,16 +1,16 @@
 use actix_web::{get, web, HttpResponse, Responder};
 use indexa::{
+    camino::Utf8PathBuf,
     database::{Database, StatusKind},
     strum::IntoEnumIterator,
 };
 use serde::Serialize;
-use std::path::PathBuf;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct InfoResponse {
     num_entries: usize,
-    root_dirs: Vec<PathBuf>,
+    root_dirs: Vec<Utf8PathBuf>,
     indexed: Vec<StatusKind>,
     fast_sortable: Vec<StatusKind>,
 }
